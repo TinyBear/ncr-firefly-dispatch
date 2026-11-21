@@ -1,3 +1,5 @@
+import SearchBox from "./SearchBox";
+
 export default function ControlDrawer({
   presets,
   scenarioId,
@@ -5,7 +7,8 @@ export default function ControlDrawer({
   depot,
   stops,
   maxStops,
-  pendingIds, 
+  pendingIds,
+  onSearchSelect, 
   placingDepot,
   onTogglePlaceDepot,
   onRemoveStop,
@@ -17,6 +20,8 @@ export default function ControlDrawer({
         <h1 className="drawer-title">Fire Fly Dispatch</h1>
         <p className="drawer-sub">Metro Manila (NCR) route optimizer</p>
       </header>
+
+      <SearchBox onSelect={onSearchSelect} />
 
       <section className="drawer-section">
         <label className="field-label" htmlFor="scenario">Scenario</label>

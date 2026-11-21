@@ -17,6 +17,7 @@ export default function App() {
   const [placingDepot, setPlacingDepot] = useState(false);
   const [fitTrigger, setFitTrigger] = useState(0);
   const [pendingIds, setPendingIds] = useState(() => new Set());
+  const [focusTarget, setFocusTarget] = useState(null);
 
   // Replace this with your Phase 3 toast. It must accept a message string.
   const [toastMsg, setToastMsg] = useState("");
@@ -46,36 +47,56 @@ export default function App() {
     );
 }
 
-  function handleMapClick({ lat, lng }) {
+  function placePoint({ lat, lng, name }) {
     if (!isWithinMetroManila(lat, lng)) {
       notify("Delivery stops are restricted to Metro Manila (NCR).");
-      return;
+      return false;
     }
     if (placingDepot) {
-      setDepot({ name: "Custom Depot", lat, lng });
+      setDepot({ name: name ?? "Custom Depot", lat, lng });
       setPlacingDepot(false);
       setScenarioId("");
-      resolveName("depot", lat, lng, (label) =>
-        setDepot((d) => (d && d.lat === lat && d.lng === lng ? { ...d, name: label } : d))
-      );
-      return;
+      if (!name) {
+        resolveName("depot", lat, lng, (label) =>
+          setDepot((d) =>
+            d && d.lat === lat && d.lng === lng ? { ...d, name: label } : d,
+          ),
+        );
+      }
+      return true;
     }
     if (stops.length >= MAX_STOPS) {
       notify(`Maximum of ${MAX_STOPS} stops reached.`);
-      return;
+      return false;
     }
     const id = crypto.randomUUID();
-    setStops((prev) => [...prev, { id, name: `Stop ${prev.length + 1}`, lat, lng }]);
+    setStops((prev) => [
+      ...prev,
+      { id, name: name ?? `Stop ${prev.length + 1}`, lat, lng },
+    ]);
     setScenarioId("");
-    resolveName(id, lat, lng, (label) =>
-      setStops((prev) => prev.map((s) => (s.id === id ? { ...s, name: label } : s)))
-    );
-  } 
+    if (!name) {
+      resolveName(id, lat, lng, (label) =>
+        setStops((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, name: label } : s)),
+        ),
+      );
+    }
+    return true;
+  }
+
+  const handleMapClick = (point) => placePoint(point);
+
+  function handleSearchSelect(result) {
+    if (placePoint(result)) {
+      setFocusTarget({ lat: result.lat, lng: result.lng, key: Date.now() });
+    }
+  }
 
   function handleSelectPreset(id) {
     setScenarioId(id);
     setPlacingDepot(false);
-    if (!id) return; // "Custom" keeps whatever is on the map
+    if (!id) return; 
 
     const preset = presets.find((p) => p.id === id);
     if (!preset) return;
@@ -110,6 +131,7 @@ export default function App() {
         onAddStop={handleMapClick}
         onOutOfBounds={notify}
         fitTrigger={fitTrigger}
+        focusTarget={focusTarget}
       />
       <ControlDrawer
         presets={presets}
@@ -123,6 +145,7 @@ export default function App() {
         onTogglePlaceDepot={() => setPlacingDepot((v) => !v)}
         onRemoveStop={handleRemoveStop}
         onClearAll={handleClearAll}
+        onSearchSelect={handleSearchSelect}
       />
       {toastMsg && <div className="toast">{toastMsg}</div>}
     </div>

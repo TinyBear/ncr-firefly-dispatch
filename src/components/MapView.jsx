@@ -51,6 +51,16 @@ function FitToPoints({ points, trigger }) {
   return null;
 }
 
+function FlyToPoint({ target }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!target) return;
+    map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 15), { duration: 0.8 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
+  return null;
+}
+
 export default function MapView({
   depot,
   stops,
@@ -60,6 +70,7 @@ export default function MapView({
   onAddStop,
   onOutOfBounds,
   fitTrigger,
+  focusTarget,  
 }) {
   return (
     <MapContainer
@@ -80,7 +91,9 @@ export default function MapView({
       <FitToPoints
         points={[...(depot ? [depot] : []), ...stops]}
         trigger={fitTrigger}
-        />
+      />
+
+      <FlyToPoint target={focusTarget} />
 
       {baselinePolyline?.length > 1 && (
         <Polyline
