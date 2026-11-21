@@ -1,5 +1,6 @@
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMapEvents } from "react-leaflet";
+import { useEffect } from "react";
 import L from "leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap, useMapEvents } from "react-leaflet";
 import { NCR_CENTER, NCR_BOUNDS, isWithinMetroManila } from "../utils/geofence";
 
 const CARTO_KEY = import.meta.env.VITE_CARTO_KEY;
@@ -36,6 +37,20 @@ function MapClickHandler({ onAddStop, onOutOfBounds }) {
   return null;
 }
 
+function FitToPoints({ points, trigger }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!trigger || points.length === 0) return;
+    map.fitBounds(points.map((p) => [p.lat, p.lng]), {
+      paddingTopLeft: [400, 60],     // keeps pins clear of the 360px drawer
+      paddingBottomRight: [60, 60],
+      maxZoom: 14,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger]);
+  return null;
+}
+
 export default function MapView({
   depot,
   stops,
@@ -44,6 +59,7 @@ export default function MapView({
   baselinePolyline,
   onAddStop,
   onOutOfBounds,
+  fitTrigger,
 }) {
   return (
     <MapContainer
@@ -60,6 +76,11 @@ export default function MapView({
         url={`https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${CARTO_KEY}`}
       />
       <MapClickHandler onAddStop={onAddStop} onOutOfBounds={onOutOfBounds} />
+
+      <FitToPoints
+        points={[...(depot ? [depot] : []), ...stops]}
+        trigger={fitTrigger}
+        />
 
       {baselinePolyline?.length > 1 && (
         <Polyline

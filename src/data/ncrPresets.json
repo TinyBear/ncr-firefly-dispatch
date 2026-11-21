@@ -1,0 +1,61 @@
+[
+  {
+    "id": "ncr-central-cbd",
+    "name": "Central Business Districts & Sta. Mesa (11 Stops)",
+    "description": "Mandaluyong Hub to Makati, BGC, Ortigas, PUP Sta. Mesa, and Manila core",
+    "depot": { "name": "Mandaluyong Central Hub (EDSA-Shaw)", "lat": 14.5815, "lng": 121.0537 },
+    "stops": [
+      { "name": "PUP Sta. Mesa Main Campus, Manila", "lat": 14.5979, "lng": 121.0108 },
+      { "name": "Ayala Triangle, Makati", "lat": 14.5567, "lng": 121.0226 },
+      { "name": "Bonifacio High Street, BGC", "lat": 14.5503, "lng": 121.0513 },
+      { "name": "Robinsons Galleria, Ortigas", "lat": 14.5906, "lng": 121.0598 },
+      { "name": "Eastwood Cyberpark, QC", "lat": 14.6091, "lng": 121.0794 },
+      { "name": "SM Mall of Asia, Pasay", "lat": 14.5351, "lng": 120.9822 },
+      { "name": "Binondo Lucky Chinatown, Manila", "lat": 14.6033, "lng": 120.9734 },
+      { "name": "Greenhills Shopping Center, San Juan", "lat": 14.6019, "lng": 121.0493 },
+      { "name": "McKinley Hill, Taguig", "lat": 14.5342, "lng": 121.0528 },
+      { "name": "Rockwell Center, Makati", "lat": 14.5649, "lng": 121.0365 },
+      { "name": "Intramuros Plaza Roma, Manila", "lat": 14.5919, "lng": 120.9731 }
+    ]
+  },
+  {
+    "id": "ncr-north-corridor",
+    "name": "CAMANAVA & Quezon City Loop (12 Stops)",
+    "description": "Valenzuela Logistics Park across Caloocan, Malabon, Navotas, and QC",
+    "depot": { "name": "Valenzuela NLEX Logistics Hub", "lat": 14.7011, "lng": 120.9830 },
+    "stops": [
+      { "name": "Monumento Circle, Caloocan", "lat": 14.6543, "lng": 120.9839 },
+      { "name": "Malabon City Hall", "lat": 14.6681, "lng": 120.9469 },
+      { "name": "Navotas Fish Port Complex", "lat": 14.6465, "lng": 120.9488 },
+      { "name": "SM City North EDSA, QC", "lat": 14.6565, "lng": 121.0305 },
+      { "name": "UP Diliman Technohub, QC", "lat": 14.6572, "lng": 121.0594 },
+      { "name": "Araneta City Cubao, QC", "lat": 14.6208, "lng": 121.0532 },
+      { "name": "Marikina Riverbanks", "lat": 14.6305, "lng": 121.0805 },
+      { "name": "SM City Fairview, QC", "lat": 14.7340, "lng": 121.0575 },
+      { "name": "Novaliches Bayan, QC", "lat": 14.7224, "lng": 121.0402 },
+      { "name": "Timog Rotonda, QC", "lat": 14.6347, "lng": 121.0345 },
+      { "name": "Banawe Street, QC", "lat": 14.6311, "lng": 121.0029 },
+      { "name": "Fisher Mall Quezon Ave, QC", "lat": 14.6353, "lng": 121.0197 }
+    ]
+  },
+  {
+    "id": "ncr-south-metro",
+    "name": "South Metro Express (12 Stops)",
+    "description": "Parañaque Airport Warehouse to Las Piñas, Muntinlupa, and Taguig",
+    "depot": { "name": "NAIA Cargo Logistics Hub, Parañaque", "lat": 14.5086, "lng": 121.0194 },
+    "stops": [
+      { "name": "BF Homes Aguirre Ave, Parañaque", "lat": 14.4554, "lng": 121.0235 },
+      { "name": "SM Southmall, Las Piñas", "lat": 14.4332, "lng": 121.0110 },
+      { "name": "Alabang Town Center, Muntinlupa", "lat": 14.4239, "lng": 121.0289 },
+      { "name": "Filinvest City Northgate, Alabang", "lat": 14.4214, "lng": 121.0419 },
+      { "name": "SM City Sucat, Parañaque", "lat": 14.4849, "lng": 120.9927 },
+      { "name": "SM City Bicutan, Parañaque", "lat": 14.4855, "lng": 121.0442 },
+      { "name": "FTI Arca South, Taguig", "lat": 14.5113, "lng": 121.0378 },
+      { "name": "Vista Mall Taguig", "lat": 14.5323, "lng": 121.0734 },
+      { "name": "Newport World Resorts, Pasay", "lat": 14.5194, "lng": 121.0197 },
+      { "name": "Okada Manila, Entertainment City", "lat": 14.5146, "lng": 120.9806 },
+      { "name": "Evia Lifestyle Center, Las Piñas", "lat": 14.3774, "lng": 121.0147 },
+      { "name": "Muntinlupa Poblacion", "lat": 14.3831, "lng": 121.0446 }
+    ]
+  }
+]
