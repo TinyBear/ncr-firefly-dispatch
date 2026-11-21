@@ -5,6 +5,7 @@ export default function ControlDrawer({
   depot,
   stops,
   maxStops,
+  pendingIds, 
   placingDepot,
   onTogglePlaceDepot,
   onRemoveStop,
@@ -43,7 +44,9 @@ export default function ControlDrawer({
             {placingDepot ? "Click map to place…" : depot ? "Move depot" : "Set depot"}
           </button>
         </div>
-        <p className="depot-name">{depot ? depot.name : "No depot set"}</p>
+        <p className="depot-name">
+          {depot ? (pendingIds.has("depot") ? "Locating…" : depot.name) : "No depot set"}
+        </p>
       </section>
 
       <section className="drawer-section">
@@ -68,7 +71,9 @@ export default function ControlDrawer({
             {stops.map((s, i) => (
               <li key={s.id} className="stop-row">
                 <span className="stop-index mono">{i + 1}</span>
-                <span className="stop-name">{s.name}</span>
+                <span className="stop-name" title={s.name}>
+                  {pendingIds.has(s.id) ? "Locating…" : s.name}
+                </span>
                 <button
                   type="button"
                   className="icon-btn"

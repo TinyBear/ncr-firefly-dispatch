@@ -4,6 +4,7 @@ import ControlDrawer from "./components/ControlDrawer";
 import presets from "./data/ncrPresets.json";
 import { loadStops, saveStops, clearStops } from "./utils/storage";
 import { isWithinMetroManila } from "./utils/geofence";
+import { reverseGeocode } from "./utils/geocode";
 
 const MAX_STOPS = 40;
 
@@ -15,6 +16,7 @@ export default function App() {
   const [scenarioId, setScenarioId] = useState("");
   const [placingDepot, setPlacingDepot] = useState(false);
   const [fitTrigger, setFitTrigger] = useState(0);
+  const [pendingIds, setPendingIds] = useState(() => new Set());
 
   // Replace this with your Phase 3 toast. It must accept a message string.
   const [toastMsg, setToastMsg] = useState("");
@@ -28,6 +30,22 @@ export default function App() {
     saveStops(depot, stops);
   }, [depot, stops]);
 
+  function resolveName(id, lat, lng, apply) {
+  setPendingIds((prev) => new Set(prev).add(id));
+  reverseGeocode(lat, lng)
+    .then((label) => {
+      if (label) apply(label);
+    })
+    .catch(() => {}) // keep the fallback name
+    .finally(() =>
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      })
+    );
+}
+
   function handleMapClick({ lat, lng }) {
     if (!isWithinMetroManila(lat, lng)) {
       notify("Delivery stops are restricted to Metro Manila (NCR).");
@@ -37,18 +55,22 @@ export default function App() {
       setDepot({ name: "Custom Depot", lat, lng });
       setPlacingDepot(false);
       setScenarioId("");
+      resolveName("depot", lat, lng, (label) =>
+        setDepot((d) => (d && d.lat === lat && d.lng === lng ? { ...d, name: label } : d))
+      );
       return;
     }
     if (stops.length >= MAX_STOPS) {
       notify(`Maximum of ${MAX_STOPS} stops reached.`);
       return;
     }
-    setStops((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), name: `Stop ${prev.length + 1}`, lat, lng },
-    ]);
+    const id = crypto.randomUUID();
+    setStops((prev) => [...prev, { id, name: `Stop ${prev.length + 1}`, lat, lng }]);
     setScenarioId("");
-  }
+    resolveName(id, lat, lng, (label) =>
+      setStops((prev) => prev.map((s) => (s.id === id ? { ...s, name: label } : s)))
+    );
+  } 
 
   function handleSelectPreset(id) {
     setScenarioId(id);
@@ -96,6 +118,7 @@ export default function App() {
         depot={depot}
         stops={stops}
         maxStops={MAX_STOPS}
+        pendingIds={pendingIds}
         placingDepot={placingDepot}
         onTogglePlaceDepot={() => setPlacingDepot((v) => !v)}
         onRemoveStop={handleRemoveStop}
