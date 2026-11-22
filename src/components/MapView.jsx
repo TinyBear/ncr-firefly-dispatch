@@ -86,8 +86,8 @@ export default function MapView({
       style={{ width: "100vw", height: "100vh" }}
     >
       <TileLayer
-        attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-        url={`https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${CARTO_KEY}`}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url={`https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`}
       />
       <MapClickHandler onAddStop={onAddStop} onOutOfBounds={onOutOfBounds} />
 
@@ -101,15 +101,37 @@ export default function MapView({
       {baselinePolyline?.length > 1 && (
         <Polyline
           positions={baselinePolyline}
-          pathOptions={{ color: "#7A8582", weight: 3, dashArray: "2 8", lineCap: "round", opacity: 0.9 }}
+          pathOptions={{
+            color: "#7A8582",
+            weight: 3,
+            dashArray: "2 8",
+            lineCap: "round",
+            opacity: 0.9,
+          }}
         />
       )}
 
       {routePolyline?.length > 1 && (
         <>
           {/* White casing keeps the route legible over busy street labels */}
-          <Polyline positions={routePolyline} pathOptions={{ color: "#FFFFFF", weight: 9, opacity: 0.95, lineJoin: "round" }} />
-          <Polyline positions={routePolyline} pathOptions={{ color: "#00B14F", weight: 5, opacity: 1, lineJoin: "round" }} />
+          <Polyline
+            positions={routePolyline}
+            pathOptions={{
+              color: "#FFFFFF",
+              weight: 9,
+              opacity: 0.95,
+              lineJoin: "round",
+            }}
+          />
+          <Polyline
+            positions={routePolyline}
+            pathOptions={{
+              color: "#00B14F",
+              weight: 5,
+              opacity: 1,
+              lineJoin: "round",
+            }}
+          />
         </>
       )}
 
@@ -122,10 +144,16 @@ export default function MapView({
       )}
 
       {stops.map((stop, idx) => {
-        const orderIndex = optimizedOrder ? optimizedOrder.indexOf(idx + 1) : -1;
+        const orderIndex = optimizedOrder
+          ? optimizedOrder.indexOf(idx + 1)
+          : -1;
         const badgeLabel = orderIndex > 0 ? orderIndex : idx + 1;
         return (
-          <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={createStopIcon(badgeLabel, orderIndex > 0)}>
+          <Marker
+            key={stop.id}
+            position={[stop.lat, stop.lng]}
+            icon={createStopIcon(badgeLabel, orderIndex > 0)}
+          >
             <Popup>
               <strong>Stop #{badgeLabel}:</strong> {stop.name}
             </Popup>
