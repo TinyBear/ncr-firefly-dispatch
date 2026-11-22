@@ -195,7 +195,9 @@ export default function App() {
       if (runRef.current !== run) return;
       const savedPct =
         out.baseline.distance > 0
-          ? ((out.baseline.distance - out.bestDistance) / out.baseline.distance) * 100
+          ? ((out.baseline.distance - out.bestDistance) /
+              out.baseline.distance) *
+            100
           : 0;
       setResult({
         ...out,
@@ -215,6 +217,7 @@ export default function App() {
       if (err.message !== "CANCELLED") {
         console.error(err);
         notify("Optimization failed. Please try again.");
+        setStatus("idle");
       }
     } finally {
       if (runRef.current === run) {
@@ -291,16 +294,18 @@ export default function App() {
             depot={depot}
             stops={stops}
             result={result}
+            pendingIds={pendingIds}
             onRename={handleRenameStop}
-            onDelete={handleRemoveStop  }
+            onDelete={handleRemoveStop}
           />
         }
       </ControlDrawer>
-
-      <TelemetryBar result={result} /> {
-        toastMsg && <div className="toast">{toastMsg}</div>
-      }
-      
+      <TelemetryBar result={result} />
+      {toastMsg && (
+        <div className="fd-toast" role="status">
+          {toastMsg}
+        </div>
+      )}
     </div>
   );
 }

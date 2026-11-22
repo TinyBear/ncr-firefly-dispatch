@@ -8,18 +8,21 @@ const CARTO_KEY = import.meta.env.VITE_CARTO_KEY;
 function createDepotIcon() {
   return L.divIcon({
     className: "",
-    html: `<div style="width:28px;height:28px;background:#0F172A;color:#FFF;border:2px solid #FFF;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;box-shadow:0 2px 6px rgba(15,23,42,0.28);">HUB</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    html: `<div class="fd-pin" style="width:38px;height:38px;background:#1C1C1C;color:#FFF;border:3px solid #FFF;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-9h6v9"/></svg></div>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
   });
 }
 
-function createStopIcon(sequenceNumber) {
+function createStopIcon(sequenceNumber, optimized = false) {
+  const style = optimized
+    ? "background:#00B14F;color:#FFF;border:3px solid #FFF;"
+    : "background:#FFF;color:#007F37;border:2.5px solid #00B14F;";
   return L.divIcon({
     className: "",
-    html: `<div style="width:24px;height:24px;background:#2563EB;color:#FFF;border:2px solid #FFF;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;box-shadow:0 2px 5px rgba(37,99,235,0.35);">${sequenceNumber}</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    html: `<div class="fd-pin" style="${style}width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,0.25);">${sequenceNumber}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   });
 }
 
@@ -98,15 +101,16 @@ export default function MapView({
       {baselinePolyline?.length > 1 && (
         <Polyline
           positions={baselinePolyline}
-          pathOptions={{ color: "#94A3B8", weight: 2.5, dashArray: "6 6", opacity: 0.8 }}
+          pathOptions={{ color: "#7A8582", weight: 3, dashArray: "2 8", lineCap: "round", opacity: 0.9 }}
         />
       )}
 
       {routePolyline?.length > 1 && (
-        <Polyline
-          positions={routePolyline}
-          pathOptions={{ color: "#2563EB", weight: 4, opacity: 0.92 }}
-        />
+        <>
+          {/* White casing keeps the route legible over busy street labels */}
+          <Polyline positions={routePolyline} pathOptions={{ color: "#FFFFFF", weight: 9, opacity: 0.95, lineJoin: "round" }} />
+          <Polyline positions={routePolyline} pathOptions={{ color: "#00B14F", weight: 5, opacity: 1, lineJoin: "round" }} />
+        </>
       )}
 
       {depot && (
@@ -121,7 +125,7 @@ export default function MapView({
         const orderIndex = optimizedOrder ? optimizedOrder.indexOf(idx + 1) : -1;
         const badgeLabel = orderIndex > 0 ? orderIndex : idx + 1;
         return (
-          <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={createStopIcon(badgeLabel)}>
+          <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={createStopIcon(badgeLabel, orderIndex > 0)}>
             <Popup>
               <strong>Stop #{badgeLabel}:</strong> {stop.name}
             </Popup>

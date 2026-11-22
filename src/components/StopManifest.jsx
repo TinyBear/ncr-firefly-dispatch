@@ -15,8 +15,8 @@ function download(filename, text, type) {
 
 const csvCell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
-export default function StopManifest({ depot, stops, result, onRename, onDelete }) {
-  if (!depot && stops.length === 0) return null;
+export default function StopManifest({ depot, stops, result, onRename, onDelete, pendingIds }) {
+  if (stops.length === 0) return null; // ControlDrawer shows the empty state
 
   // Optimized order when a result exists, otherwise insertion order
   const rows = (
@@ -55,42 +55,64 @@ export default function StopManifest({ depot, stops, result, onRename, onDelete 
   }
 
   return (
-    <section className="ff-section">
-      <div className="ff-label">
-        {result ? "Dispatch manifest (optimized)" : "Stops"} · {rows.length}
-      </div>
+    <>
+      <ol className="fd-list">
+        {depot && (
+          <li className="fd-row">
+            <span className="fd-dot hub">H</span>
+            <div>
+              <div className="fd-row-name">{pendingIds?.has("depot") ? "Locating…" : depot.name}</div>
+              <div className="fd-sub">{result ? "Depart" : "Depot"}</div>
+            </div>
+            <span />
+          </li>
+        )}
 
-      {rows.map(({ seq, stop }) => (
-        <div className="ff-row" key={stop.id}>
-          <span className="ff-seq">{seq}</span>
-          <input
-            id={`stop-name-${stop.id}`}
-            name={`stop-name-${stop.id}`}
-            autoComplete="off"
-            value={stop.name}
-            onChange={(e) => onRename(stop.id, e.target.value)}
-            aria-label={`Rename stop ${seq}`}
-          />
-          <span
-            className={`ff-geo ${isWithinMetroManila(stop.lat, stop.lng) ? "" : "bad"}`}
-            title="NCR geofence check"
-          >
-            {isWithinMetroManila(stop.lat, stop.lng) ? "NCR ✓" : "Outside NCR"}
-          </span>
-          <button
-            className="ff-icon-btn"
-            onClick={() => onDelete(stop.id)}
-            aria-label={`Delete stop ${seq}`}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      ))}
+        {rows.map(({ seq, stop }) => {
+          const inside = isWithinMetroManila(stop.lat, stop.lng);
+          return (
+            <li className="fd-row" key={stop.id}>
+              <span className={`fd-dot${result ? "" : " idle"}`}>{seq}</span>
+              <div style={{ minWidth: 0 }}>
+                <input
+                  id={`stop-name-${stop.id}`}
+                  name={`stop-name-${stop.id}`}
+                  className="fd-edit"
+                  autoComplete="off"
+                  value={stop.name}
+                  onChange={(e) => onRename(stop.id, e.target.value)}
+                  aria-label={`Rename stop ${seq}`}
+                />
+                {pendingIds?.has(stop.id) && <div className="fd-sub" style={{ paddingLeft: 8 }}>Locating address…</div>}
+                {!inside && <div className="fd-warn" title="NCR geofence check">Outside NCR</div>}
+              </div>
+              <button
+                className="fd-icon-btn"
+                onClick={() => onDelete(stop.id)}
+                aria-label={`Delete stop ${seq}`}
+              >
+                <Trash2 size={15} />
+              </button>
+            </li>
+          );
+        })}
 
-      <div className="ff-export">
-        <button disabled={!result} onClick={exportJson}>Export JSON</button>
-        <button disabled={!result} onClick={exportCsv}>Export CSV</button>
+        {result && depot && (
+          <li className="fd-row">
+            <span className="fd-dot hub">H</span>
+            <div>
+              <div className="fd-row-name">Return to hub</div>
+              <div className="fd-sub">{depot.name}</div>
+            </div>
+            <span />
+          </li>
+        )}
+      </ol>
+
+      <div className="fd-export">
+        <button className="fd-btn2" disabled={!result} onClick={exportJson}>Export JSON</button>
+        <button className="fd-btn2" disabled={!result} onClick={exportCsv}>Export CSV</button>
       </div>
-    </section>
+    </>
   );
 }
