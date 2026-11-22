@@ -93,6 +93,8 @@ select {
   overflow-y: auto;
   font-family: "Inter", system-ui, sans-serif;
   color: #0f172a;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto; 
 }
 
 .drawer-header { 
@@ -375,4 +377,199 @@ select {
     bottom: auto;
     max-height: 50vh;
   }
+}
+
+/* ---- Phase 6 ---- */
+.ff-section {
+  padding: 12px 16px;
+  border-top: 1px solid #E2E8F0;
+}
+
+.ff-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #64748B;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.ff-mono {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.ff-seg {
+  display: flex;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ff-seg button {
+  flex: 1;
+  padding: 8px 6px;
+  font: 500 12px Inter, sans-serif;
+  background: #fff;
+  color: #334155;
+  border: 0;
+  cursor: pointer;
+}
+
+.ff-seg button.active {
+  background: #0F172A;
+  color: #fff;
+}
+
+.ff-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #92400E;
+  background: #FEF3C7;
+  border-radius: 9999px;
+}
+
+.ff-field {
+  display: grid;
+  grid-template-columns: 1fr 110px 44px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: #334155;
+  margin: 8px 0;
+}
+
+.ff-run {
+  width: 100%;
+  padding: 10px 12px;
+  font: 600 14px Inter, sans-serif;
+  color: #fff;
+  background: #0F172A;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ff-run:disabled {
+  background: #94A3B8;
+  cursor: not-allowed;
+}
+
+.ff-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #64748B;
+}
+
+.ff-seq {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 9999px;
+  background: #2563EB;
+  color: #fff;
+  font: 600 11px "JetBrains Mono", monospace;
+  display: grid;
+  place-items: center;
+}
+
+.ff-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.ff-row input {
+  flex: 1;
+  min-width: 0;
+  font: 12px Inter, sans-serif;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 6px;
+  text-overflow: ellipsis;
+}
+
+.ff-row input:hover,
+.ff-row input:focus {
+  border-color: #E2E8F0;
+  outline: none;
+}
+
+.ff-geo {
+  font-size: 10px;
+  color: #16A34A;
+}
+
+.ff-geo.bad {
+  color: #DC2626;
+}
+
+.ff-icon-btn {
+  border: 0;
+  background: transparent;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.ff-icon-btn:hover {
+  color: #DC2626;
+}
+
+.ff-export {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ff-export button {
+  flex: 1;
+  padding: 8px;
+  font: 500 12px Inter, sans-serif;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ff-export button:disabled {
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+.ff-telemetry {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+}
+
+.ff-kpi .k {
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #64748B;
+}
+
+.ff-kpi .v {
+  font: 600 16px "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  color: #0F172A;
+}
+
+.ff-spark {
+  width: 140px;
+  height: 40px;
 }

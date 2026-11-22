@@ -1,5 +1,21 @@
 import SearchBox from "./SearchBox";
 
+const PARAM_FIELDS = [
+  { key: "populationSize", label: "Fireflies", min: 15, max: 60, step: 1 },
+  { key: "iterations", label: "Iterations", min: 50, max: 300, step: 10 },
+  { key: "alpha", label: "α₀ (randomness)", min: 0, max: 1, step: 0.05 },
+  { key: "beta0", label: "β₀ (attractiveness)", min: 0.1, max: 2, step: 0.1 },
+  { key: "gamma", label: "γ (absorption)", min: 0.01, max: 2, step: 0.01 },
+];
+
+const RUN_LABELS = {
+  idle: "Run Optimization",
+  done: "Run Again",
+  matrix: "Fetching distances…",
+  optimizing: "Optimizing…",
+  routing: "Drawing route…",
+};
+
 export default function ControlDrawer({
   presets,
   scenarioId,
@@ -13,7 +29,13 @@ export default function ControlDrawer({
   onTogglePlaceDepot,
   onRemoveStop,
   onClearAll,
+  mode, onModeChange,
+  params, onParamsChange,
+  onRun, status, canRun,
+  usedFallback, progress,
+  children,
 }) {
+  const busy = ["matrix", "optimizing", "routing"].includes(status);
   return (
     <aside className="drawer">
       <header className="drawer-header">
@@ -37,6 +59,66 @@ export default function ControlDrawer({
           ))}
         </select>
       </section>
+
+      <section className="ff-section">
+        <div className="ff-label">Distance source</div>
+        <div className="ff-seg" role="group" aria-label="Distance source">
+          <button
+            type="button"
+            className={mode === "osrm" ? "active" : ""}
+            onClick={() => onModeChange("osrm")}
+          >
+            Real Roads (OSRM)
+          </button>
+          <button
+            type="button"
+            className={mode === "haversine" ? "active" : ""}
+            onClick={() => onModeChange("haversine")}
+          >
+            Straight-Line (Haversine)
+          </button>
+        </div>
+        {usedFallback && mode === "osrm" && (
+          <span className="ff-badge">Fallback: straight-line distances</span>
+        )}
+      </section>
+
+      <details className="ff-section">
+        <summary className="ff-label">Algorithm parameters</summary>
+        {PARAM_FIELDS.map((f) => (
+          <label key={f.key} className="ff-field">
+            <span>{f.label}</span>
+            <input
+              type="range"
+              min={f.min}
+              max={f.max}
+              step={f.step}
+              value={params[f.key]}
+              onChange={(e) =>
+                onParamsChange({ ...params, [f.key]: Number(e.target.value) })
+              }
+            />
+            <span className="ff-mono">{params[f.key]}</span>
+          </label>
+        ))}
+      </details>
+
+      <section className="ff-section">
+        <button className="ff-run" disabled={!canRun || busy} onClick={onRun}>
+          {RUN_LABELS[status] ?? "Run Optimization"}
+        </button>
+        {!canRun && (
+          <p className="ff-hint">Set a depot and add at least 2 stops to run.</p>
+        )}
+        {busy && progress && (
+          <p className="ff-hint ff-mono">
+            Iter {progress.iteration}/{params.iterations} ·{" "}
+            {progress.bestDistance.toFixed(2)} km
+          </p>
+        )}
+      </section>
+
+      {children /* StopManifest renders here */}
 
       <section className="drawer-section">
         <div className="row-between">
