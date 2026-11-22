@@ -8,14 +8,6 @@ const PARAM_FIELDS = [
   { key: "gamma", label: "γ (absorption)", min: 0.01, max: 2, step: 0.01 },
 ];
 
-const RUN_LABELS = {
-  idle: "Run Optimization",
-  done: "Run Again",
-  matrix: "Fetching distances…",
-  optimizing: "Optimizing…",
-  routing: "Drawing route…",
-};
-
 export default function ControlDrawer({
   presets,
   scenarioId,
@@ -31,11 +23,10 @@ export default function ControlDrawer({
   onClearAll,
   mode, onModeChange,
   params, onParamsChange,
-  onRun, status, canRun,
+  onRun, isRunning, hasDepot, stopCount,
   usedFallback, progress,
   children,
 }) {
-  const busy = ["matrix", "optimizing", "routing"].includes(status);
   return (
     <aside className="drawer">
       <header className="drawer-header">
@@ -104,13 +95,21 @@ export default function ControlDrawer({
       </details>
 
       <section className="ff-section">
-        <button className="ff-run" disabled={!canRun || busy} onClick={onRun}>
-          {RUN_LABELS[status] ?? "Run Optimization"}
+        <button
+          className="btn-primary"
+          onClick={onRun}
+          disabled={isRunning || !hasDepot || stopCount < 2}
+        >
+          {isRunning ? "Optimizing…" : "Run Optimization"}
         </button>
-        {!canRun && (
-          <p className="ff-hint">Set a depot and add at least 2 stops to run.</p>
+        {!isRunning && (!hasDepot || stopCount < 2) && (
+          <p className="hint">
+            {!hasDepot
+              ? "Set a depot to begin."
+              : "Add at least 2 stops to optimize a route."}
+          </p>
         )}
-        {busy && progress && (
+        {isRunning && progress && (
           <p className="ff-hint ff-mono">
             Iter {progress.iteration}/{params.iterations} ·{" "}
             {progress.bestDistance.toFixed(2)} km

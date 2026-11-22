@@ -38,13 +38,17 @@ export function buildHaversineMatrix(points) {
 export async function fetchOsrmMatrix(points) {
   const coords = points.map((p) => `${p.lng},${p.lat}`).join(";");
   const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
-  const res = await fetchWithTimeout(url);
+  const res = await fetchWithTimeout(url, 8000);
   if (!res.ok) throw new Error("OSRM table request failed");
   const data = await res.json();
-  if (data.code !== "Ok" || !data.distances) {
+  if (
+    data.code !== "Ok" ||
+    !data.distances ||
+    data.distances.length !== points.length
+  ) {
     throw new Error("Invalid OSRM table response");
   }
-  // Convert meters to kilometers (null = unreachable → treat as 1000 km)
+  // Convert meters to kilometers
   return data.distances.map((row) => row.map((d) => (d ?? 1e6) / 1000));
 }
 
@@ -52,7 +56,7 @@ export async function fetchOsrmMatrix(points) {
 export async function fetchOsrmRouteGeometry(orderedPoints) {
   const coords = orderedPoints.map((p) => `${p.lng},${p.lat}`).join(";");
   const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
-  const res = await fetchWithTimeout(url);
+  const res = await fetchWithTimeout(url, 10000);
   if (!res.ok) throw new Error("OSRM route request failed");
   const data = await res.json();
   if (data.code !== "Ok" || !data.routes?.[0]) {

@@ -1,16 +1,13 @@
-import { useEffect, useRef, useState } from "react"; // PHASE 6: added useRef
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import ControlDrawer from "./components/ControlDrawer";
 import presets from "./data/ncrPresets.json";
 import { loadStops, saveStops, clearStops } from "./utils/storage";
 import { isWithinMetroManila } from "./utils/geofence";
+import { startOptimization } from "./utils/runOptimization";
+import { validateNewStop } from "./utils/geofence";
 import { reverseGeocode } from "./utils/geocode";
 // PHASE 6
-import {
-  buildHaversineMatrix,
-  fetchOsrmMatrix,
-  fetchOsrmRouteGeometry,
-} from "./algorithms/distance";
 import TelemetryBar from "./components/TelemetryBar";
 import StopManifest from "./components/StopManifest";
 
@@ -43,10 +40,7 @@ export default function App() {
   const [progress, setProgress] = useState(null);
   const [result, setResult] = useState(null);
   const [usedFallback, setUsedFallback] = useState(false);
-  const workerRef = useRef(null);
-  const runIdRef = useRef(0); // lets us ignore results from superseded runs
-
-  const canRun = Boolean(depot) && stops.length >= 2;
+  const runRef = useRef(null);
 
   // Replace this with your Phase 3 toast. It must accept a message string.
   const [toastMsg, setToastMsg] = useState("");
@@ -59,31 +53,6 @@ export default function App() {
   useEffect(() => {
     saveStops(depot, stops);
   }, [depot, stops]);
-
-  // PHASE 6: terminate the worker when App unmounts
-  useEffect(() => () => workerRef.current?.terminate(), []);
-
-    // PHASE 6: clear results only when coordinates change (not on rename / geocoded names)
-  const layoutSig = JSON.stringify([
-    depot && [depot.lat, depot.lng],
-    stops.map((s) => [s.lat, s.lng]),
-  ]);
-
-  // Reset derived UI state during render (React's recommended pattern; no effect needed)
-  const [prevSig, setPrevSig] = useState(layoutSig);
-  if (prevSig !== layoutSig) {
-    setPrevSig(layoutSig);
-    setResult(null);
-    setProgress(null);
-    setUsedFallback(false);
-    setStatus("idle");
-  }
-
-  // Effects are for external systems: stop any in-flight run and its worker
-  useEffect(() => {
-    runIdRef.current++; // makes any pending async callbacks ignore their results
-    workerRef.current?.terminate();
-  }, [layoutSig]);
 
   function resolveName(id, lat, lng, apply) {
   setPendingIds((prev) => new Set(prev).add(id));
@@ -102,11 +71,11 @@ export default function App() {
 }
 
   function placePoint({ lat, lng, name }) {
-    if (!isWithinMetroManila(lat, lng)) {
-      notify("Delivery stops are restricted to Metro Manila (NCR).");
-      return false;
-    }
     if (placingDepot) {
+      if (!isWithinMetroManila(lat, lng)) {
+        notify("Delivery stops are restricted to Metro Manila (NCR).");
+        return false;
+      }
       setDepot({ name: name ?? "Custom Depot", lat, lng });
       setPlacingDepot(false);
       setScenarioId("");
@@ -119,8 +88,9 @@ export default function App() {
       }
       return true;
     }
-    if (stops.length >= MAX_STOPS) {
-      notify(`Maximum of ${MAX_STOPS} stops reached.`);
+    const err = validateNewStop(stops.length, lat, lng);
+    if (err) {
+      notify(err);
       return false;
     }
     const id = crypto.randomUUID();
@@ -139,9 +109,22 @@ export default function App() {
     return true;
   }
 
-  const handleMapClick = (point) => placePoint(point);
+  const handleMapClick = (point) => {
+    const { lat, lng } = point;
+    const error = validateNewStop(stops.length, lat, lng);
+    if (error) {
+      notify(error);
+      return;
+    }
+    placePoint(point);
+  };
 
   function handleSearchSelect(result) {
+    const error = validateNewStop(stops.length, result.lat, result.lng);
+    if (error) {
+      notify(error);
+      return;
+    }
     if (placePoint(result)) {
       setFocusTarget({ lat: result.lat, lng: result.lng, key: Date.now() });
     }
@@ -182,108 +165,88 @@ export default function App() {
     setStops((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
 
   // PHASE 6: run handler 
-  async function handleRun() {
-    if (!canRun) return;
+  const handleRun = useCallback(async () => {
+    if (!depot) {
+      notify("Set a depot first.");
+      return;
+    }
+    if (stops.length < 2) {
+      notify("Add at least 2 delivery stops to optimize.");
+      return;
+    }
 
-    const runId = ++runIdRef.current;
-    workerRef.current?.terminate();
+    runRef.current?.cancel();
+    setStatus("optimizing");
     setResult(null);
     setProgress(null);
     setUsedFallback(false);
 
-    const points = [depot, ...stops];
-    let fellBack = false;
-    let distMatrix;
+    const run = startOptimization({
+      depot,
+      stops,
+      useRoads: mode === "osrm",
+      options: params,
+      onProgress: setProgress,
+    });
+    runRef.current = run;
 
-    // 1) Distance matrix (OSRM request #1, or Haversine)
-    setStatus("matrix");
-    if (mode === "osrm") {
-      try {
-        distMatrix = await fetchOsrmMatrix(points);
-      } catch {
-        distMatrix = buildHaversineMatrix(points);
-        fellBack = true;
-      }
-    } else {
-      distMatrix = buildHaversineMatrix(points);
-    }
-    if (runId !== runIdRef.current) return; // superseded while fetching
-    const useRoads = mode === "osrm" && !fellBack;
-
-    // 2) Firefly in the worker (0 HTTP calls)
-    setStatus("optimizing");
-    const worker = new Worker(
-      new URL("./workers/optimizer.worker.js", import.meta.url),
-      { type: "module" }
-    );
-    workerRef.current = worker;
-
-    worker.onerror = () => {
-      if (runId !== runIdRef.current) return;
-      setStatus("idle");
-      notify("Optimizer crashed. Check the console.");
-    };
-
-    worker.onmessage = async (event) => {
-      if (runId !== runIdRef.current) return;
-      const { type, payload } = event.data;
-
-      if (type === "PROGRESS") {
-        setProgress(payload);
-        return;
-      }
-      if (type === "ERROR") {
-        setStatus("idle");
-        notify(`Optimizer error: ${payload}`);
-        return;
-      }
-      if (type !== "COMPLETE") return;
-
-      worker.terminate();
-      const { bestRoute, bestDistance, history, baseline, elapsedMs } = payload;
-
-      // 3) Street geometry (OSRM request #2) or straight lines
-      setStatus("routing");
-      const ordered = bestRoute.map((i) => points[i]);
-      const baselineOrdered = baseline.route.map((i) => points[i]);
-      let routePolyline = ordered.map((p) => [p.lat, p.lng]);
-
-      if (useRoads) {
-        try {
-          routePolyline = await fetchOsrmRouteGeometry(ordered);
-        } catch {
-          fellBack = true;
-        }
-      }
-      if (runId !== runIdRef.current) return;
-
-      const baselinePolyline = baselineOrdered.map((p) => [p.lat, p.lng]);
+    try {
+      const out = await run.promise;
+      if (runRef.current !== run) return;
       const savedPct =
-        baseline.distance > 0
-          ? ((baseline.distance - bestDistance) / baseline.distance) * 100
+        out.baseline.distance > 0
+          ? ((out.baseline.distance - out.bestDistance) / out.baseline.distance) * 100
           : 0;
-
-      setUsedFallback(fellBack);
       setResult({
-        bestRoute,
-        bestDistance,
-        baselineDistance: baseline.distance,
+        ...out,
+        baselineDistance: out.baseline.distance,
         savedPct,
-        elapsedMs,
-        history,
-        routePolyline,
-        baselinePolyline,
         source:
-          mode === "osrm" && !fellBack
+          mode === "osrm" && !out.usedFallback
             ? "OSRM (road network)"
             : "Haversine (straight-line)",
       });
+      setUsedFallback(out.usedFallback);
       setStatus("done");
-    };
+      if (out.usedFallback && mode === "osrm") {
+        notify("Road routing unavailable. Using straight-line distances.");
+      }
+    } catch (err) {
+      if (err.message !== "CANCELLED") {
+        console.error(err);
+        notify("Optimization failed. Please try again.");
+      }
+    } finally {
+      if (runRef.current === run) {
+        runRef.current = null;
+      }
+    }
+  }, [depot, stops, mode, params]);
 
-    // options holds only primitives, so it is safe to structured-clone
-    worker.postMessage({ distMatrix, options: params });
+  // 5c: cancel any in-flight run when App unmounts
+  useEffect(() => () => runRef.current?.cancel(), []);
+
+  // 5d: clear stale results when coordinates change (not on rename / geocoded names)
+  const coordKey = useMemo(
+    () =>
+      [depot, ...stops]
+        .map((p) => (p ? `${p.lat.toFixed(6)},${p.lng.toFixed(6)}` : "none"))
+        .join("|"),
+    [depot, stops],
+  );
+
+  const [prevCoordKey, setPrevCoordKey] = useState(coordKey);
+  if (prevCoordKey !== coordKey) {
+    setPrevCoordKey(coordKey);
+    setStatus("idle");
+    setResult(null);
+    setProgress(null);
   }
+
+  useEffect(() => {
+    runRef.current?.cancel();
+    runRef.current = null;
+  }, [coordKey]);
 
   return (
     <div className={placingDepot ? "placing-depot" : ""}>
@@ -317,8 +280,9 @@ export default function App() {
         params={params}
         onParamsChange={setParams}
         onRun={handleRun}
-        status={status}
-        canRun={canRun}
+        isRunning={status === "optimizing"}
+        hasDepot={Boolean(depot)}
+        stopCount={stops.length}
         usedFallback={usedFallback}
         progress={progress}
       >
